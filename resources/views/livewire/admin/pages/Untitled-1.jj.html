@@ -1,0 +1,421 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card">
+                <div class="card-header border-0 align-items-center d-flex py-0 bg-secondary text-white">
+                    <h4 class="card-title my-2 flex-grow-1"> GRAFIK STATUS GIZI ANAK LOMBOK UTARA <h4>
+                            <div class="my-2">
+                                <button type="button" class="btn btn-light btn-sm ">Tahun 2025</button>
+                            </div>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-xl-5 audiences-border">
+                            <div id="bar-perbulan-chart" class="apex-charts"></div>
+                        </div>
+                        <div class="col-xl-7">
+                            <div id="line-perbulan-chart" class="apex-charts"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <ul class="nav nav-tabs nav-tabs-custom nav-justified" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" data-bs-toggle="tab" href="#map_gizi" role="tab" aria-selected="true">
+                    <i class="mdi mdi-map-legend font-size-20"></i>
+                    <span class="d-none d-sm-block">MAP Status Gizi Anak</span>
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" data-bs-toggle="tab" href="#data_posyandu" role="tab" aria-selected="false"
+                    tabindex="-1">
+                    <i class="mdi mdi-home-flood font-size-20"></i>
+                    <span class="d-none d-sm-block">Data Posyandu</span>
+                </a>
+            </li>
+
+        </ul>
+        <div class="tab-content p-4">
+            <div class="tab-pane active show" id="map_gizi" role="tabpanel">
+                <div id="map" style="height: 600px; width: 100%;"></div>
+            </div>
+            <div class="tab-pane" id="data_posyandu" role="tabpanel">
+                <h5>Posyandu</h5>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map and Controls -->
+    {{-- <div class="row mt-3">
+        <div class="col-md-3">
+            <div class="card bg-primary">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Pilih Wilayah</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Kecamatan</label>
+                        <select class="form-select" id="kecamatan-select">
+                            <option value="">Semua Kecamatan</option>
+                            @foreach ($kecamatans as $kecamatan)
+                                <option value="{{ $kecamatan }}">{{ $kecamatan }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Desa</label>
+                        <select class="form-select" id="desa-select" disabled>
+                            <option value="">Semua Desa</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="show-posyandu" checked>
+                        <label class="form-check-label" for="show-posyandu">Tampilkan Posyandu</label>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="reset-map">Reset Peta</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div id="map" style="height: 600px; width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div> --}}
+
+</div>
+
+@push('scripts')
+    <script src="/assets/libs/apexcharts/apexcharts.min.js"></script>
+    <script>
+        const dataGizi = @json($dataGizi);
+
+        const bulanLabels = {
+            1: 'Januari',
+            2: 'Februari',
+            3: 'Maret',
+            4: 'April',
+            5: 'Mei',
+            6: 'Juni',
+            7: 'Juli',
+            8: 'Agustus',
+            9: 'September',
+            10: 'Oktober',
+            11: 'November',
+            12: 'Desember'
+        };
+
+        // Ambil semua bulan unik dari semua data
+        const allMonths = [...new Set(
+            dataGizi.flatMap(item => Object.keys(item.dataPerMonth))
+        )].map(Number).sort((a, b) => a - b);
+
+        const monthNames = allMonths.map(m => bulanLabels[m] ?? `Bulan ${m}`);
+
+        // Bar chart: Per bulan, tiap series adalah type gizi
+        const barSeries = dataGizi.map(item => ({
+            name: item.type,
+            data: allMonths.map(m => item.dataPerMonth[m] || 0)
+        }));
+
+        const barOptions = {
+            chart: {
+                type: 'bar',
+                height: 350,
+                stacked: true
+            },
+            series: barSeries,
+            xaxis: {
+                categories: monthNames
+            },
+            title: {
+                text: 'Data Status Gizi Anak',
+                align: 'center'
+            }
+        };
+        new ApexCharts(document.querySelector("#bar-perbulan-chart"), barOptions).render();
+
+        // Line chart: sama seperti bar, tapi dengan type "line"
+        const lineSeries = dataGizi.map(item => ({
+            name: item.type,
+            data: allMonths.map(m => item.dataPerMonth[m] || 0)
+        }));
+
+        const lineOptions = {
+            chart: {
+                type: 'line',
+                height: 350
+            },
+            stroke: {
+                curve: 'smooth'
+            },
+            markers: {
+                size: 5,
+                hover: {
+                    size: 7
+                }
+            },
+            tooltip: {
+                shared: true,
+                intersect: false,
+                y: {
+                    formatter: (val) => `${val} anak`
+                }
+            },
+            grid: {
+                borderColor: '#f1f1f1'
+            },
+            fill: {
+                type: 'solid',
+                opacity: 0.5
+            },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'center',
+                floating: true,
+                fontSize: '14px',
+                fontWeight: 600,
+                labels: {
+                    colors: '#333'
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: (val) => `${val} anak`
+            },
+            series: lineSeries,
+            xaxis: {
+                categories: monthNames
+            },
+            title: {
+                text: 'Perkembangan Status Gizi Anak',
+                align: 'center'
+            },
+        };
+        new ApexCharts(document.querySelector("#line-perbulan-chart"), lineOptions).render();
+    </script>
+    
+@push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        #map {
+            height: 500px;
+        }
+
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+
+        .info h4 {
+            margin: 0 0 5px;
+            color: #777;
+        }
+
+        .legend {
+            text-align: left;
+            line-height: 18px;
+            color: #555;
+        }
+
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+    </style>
+@endpush
+
+@push('scripts')
+    <script type="text/javascript">
+        // Initialize the map
+        const map = L.map('map').setView([-8.367487387414142, 116.24772867731335], 11);
+
+        // Add base tiles
+        const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // Create a cache for count data to avoid repeated API calls
+        const countDataCache = {};
+
+        // Control for displaying information
+        const info = L.control();
+
+        info.onAdd = function(map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+
+        info.update = function(props) {
+            if (props) {
+                const count = countDataCache[props.Name] || 0;
+                this._div.innerHTML = `<h4>Data Stunting Desa</h4><b>${props.Name}</b><br />Jumlah Kasus: ${count} anak`;
+            } else {
+                this._div.innerHTML = '<h4>Data Stunting Desa</h4>Gerakkan mouse ke desa';
+            }
+        };
+
+        info.addTo(map);
+
+        // Color scale based on stunting count
+        function getColor(d) {
+            return d > 1000 ? '#800026' :
+                d > 500 ? '#BD0026' :
+                d > 200 ? '#E31A1C' :
+                d > 100 ? '#FC4E2A' :
+                d > 50 ? '#FD8D3C' :
+                d > 20 ? '#FEB24C' :
+                d > 10 ? '#FED976' : '#FFEDA0';
+        }
+
+        // Function to fetch count data with caching
+        async function getCountData(kecamatanName) {
+            // Check cache first
+            if (countDataCache[kecamatanName] !== undefined) {
+                return countDataCache[kecamatanName];
+            }
+
+            try {
+                const response = await fetch(`/getCountStunting?param=${encodeURIComponent(kecamatanName)}`);
+                const data = await response.json();
+                
+                // Store in cache
+                countDataCache[kecamatanName] = data.count || 0;
+                return countDataCache[kecamatanName];
+            } catch (error) {
+                console.error('Error fetching count data:', error);
+                return 0;
+            }
+        }
+
+        // Function to fetch all count data at once
+        async function fetchAllCountData(features) {
+            const names = features.map(f => f.properties.Name);
+            try {
+                const response = await fetch(`/getAllCountGiziForDesa?params=${encodeURIComponent(JSON.stringify(names))}`);
+                const data = await response.json();
+                
+                // Store all data in cache
+                Object.keys(data).forEach(key => {
+                    countDataCache[key] = data[key] || 0;
+                });
+            } catch (error) {
+                console.error('Error fetching all count data:', error);
+                // Initialize with 0 if error
+                names.forEach(name => {
+                    if (countDataCache[name] === undefined) {
+                        countDataCache[name] = 0;
+                    }
+                });
+            }
+        }
+
+        // Highlight feature on hover
+        function highlightFeature(e) {
+            const layer = e.target;
+
+            layer.setStyle({
+                weight: 5,
+                color: '#666',
+                dashArray: '',
+                fillOpacity: 0.7
+            });
+
+            layer.bringToFront();
+            info.update(layer.feature.properties);
+        }
+
+        // Reset highlight when mouse leaves
+        function resetHighlight(e) {
+            geojson.resetStyle(e.target);
+            info.update();
+        }
+
+        // Zoom to feature on click
+        function zoomToFeature(e) {
+            map.fitBounds(e.target.getBounds());
+        }
+
+        // Add event listeners to each feature
+        function onEachFeature(feature, layer) {
+            layer.on({
+                mouseover: highlightFeature,
+                mouseout: resetHighlight,
+                click: zoomToFeature
+            });
+        }
+
+        // Variable to hold our GeoJSON layer
+        let geojson;
+
+        // Load and display GeoJSON data
+        fetch('/geojson/Batas_Desa_di_KLU.geojson')
+            .then(response => response.json())
+            .then(async data => {
+                // First fetch all count data
+                await fetchAllCountData(data.features);
+                
+                // Then create the GeoJSON layer with the cached data
+                geojson = L.geoJson(data, {
+                    style: function(feature) {
+                        const count = countDataCache[feature.properties.Name] || 0;
+                        return {
+                            weight: 2,
+                            opacity: 1,
+                            color: 'white',
+                            dashArray: '3',
+                            fillOpacity: 0.7,
+                            fillColor: getColor(count)
+                        };
+                    },
+                    onEachFeature: onEachFeature
+                }).addTo(map);
+
+                // Add legend after data is loaded
+                addLegend();
+            })
+            .catch(error => console.error('Error loading GeoJSON:', error));
+
+        // Function to add legend
+        function addLegend() {
+            const legend = L.control({ position: 'bottomright' });
+
+            legend.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'info legend');
+                const grades = [0, 10, 20, 50, 100, 200, 500, 1000];
+                const labels = ['<strong>Jumlah Kasus Stunting</strong>'];
+                
+                // Loop through our intervals and generate a label with a colored square for each interval
+                for (let i = 0; i < grades.length; i++) {
+                    div.innerHTML +=
+                        '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+                        grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+                }
+
+                return div;
+            };
+
+            legend.addTo(map);
+        }
+    </script>
+@endpush
+@endpush
