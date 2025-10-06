@@ -52,6 +52,10 @@ class FrontMapDesa extends Component
             'kecamatans' => $this->kecamatans,
             'dataGizi_posyandu' => $this->dataGizi_posyandu,
             'dataPosyandu' => $this->dataPosyandu,
-        ])->layout('layouts.frontend.app-front');
+        ])->layout('layouts.frontend.minimal', [
+            'title' => 'Peta Sebaran Gizi',
+            'page-title' => 'Peta Sebaran Status Gizi Anak',
+            'page-description' => 'Visualisasi peta sebaran data gizi anak Lombok Utara'
+        ]);
     }
 }

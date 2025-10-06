@@ -9,6 +9,7 @@ use App\Livewire\Admin\Pages\Desa;
 use App\Livewire\Admin\Pages\StatusGiziImport;
 use App\Livewire\Frontend\Pages\FrontMapDesa;
 use App\Livewire\Frontend\Pages\HomePage;
+use App\Livewire\Frontend\Pages\Dashboard as FrontendDashboard;
 use App\Models\Posyandu;
 use App\Models\StatusGizi;
 use Illuminate\Support\Facades\Route;
@@ -70,8 +71,12 @@ Route::prefix('admin_management')
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', HomePage::class)->name('home');
+// Make the dashboard the root page
+Route::get('/', FrontendDashboard::class)->name('home');
+Route::get('/grafik', HomePage::class)->name('grafik');
 Route::get('/peta', FrontMapDesa::class)->name('map.desa');
+Route::get('/dashboard', FrontendDashboard::class)->name('frontend.dashboard');
+
 Route::get('/getAllCountStunting', [GetDataGiziController::class, 'getAllCountStunting']);
 Route::get('/getAllCountGiziForDesa', [GetDataGiziController::class, 'getAllCountGiziForDesa']);
 

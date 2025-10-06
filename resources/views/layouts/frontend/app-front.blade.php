@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
+{{-- <html lang="en" data-bs-theme="dark"> --}}
 <head>
         
         <meta charset="utf-8" />
@@ -53,7 +54,12 @@
                                 <ul class="navbar-nav">
                                     <li class="nav-item">
                                         <a class="nav-link" href="/">
-                                            <i class="uim uim-airplay"></i> Gizi Anak
+                                            <i class="uim uim-airplay"></i> Grafik Gizi Anak Lombok Utara
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="/peta">
+                                            <i class="uim uim-airplay"></i> Peta Geografis Gizi 
                                         </a>
                                     </li>
                                 </ul>

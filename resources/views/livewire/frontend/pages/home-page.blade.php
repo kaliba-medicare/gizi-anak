@@ -1,4 +1,4 @@
-{{-- 
+
 <div class="container">
     <div class="row">
         <div class="col-xl-12">
@@ -146,11 +146,11 @@
         new ApexCharts(document.querySelector("#line-perbulan-chart"), lineOptions).render();
 
     </script>
-@endpush --}}
+@endpush
 
 
 
-<div class="container-fluid">
+{{-- <div class="container-fluid">
     <div class="row">
         <div class="col-xl-12">
             <div class="card">
@@ -819,4 +819,4 @@
             });
         });
     </script>
-@endpush
+@endpush --}}

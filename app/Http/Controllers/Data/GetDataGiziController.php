@@ -13,6 +13,9 @@ class GetDataGiziController extends Controller
     public function getAllCountStunting(Request $request)
     {
         $params = $request->query('params');
+        $year = $request->query('year', date('Y')); // Default to current year
+        $month = $request->query('month', 'all'); // Default to 'all'
+        $category = $request->query('category', 1); // Default to Stunting (type_id = 1)
         
         // Validate the parameter
         if (empty($params)) {
@@ -28,10 +31,15 @@ class GetDataGiziController extends Controller
             $results = [];
             
             foreach ($kecamatans as $kecamatan) {
-                $count = StatusGizi::where('type_id', 1)
-                    ->where('month', '4')
-                    ->where('year', '2025')
-                    ->where('kec', 'like', '%' . $kecamatan . '%')
+                $query = StatusGizi::where('type_id', $category)
+                    ->where('year', $year);
+                
+                // Apply month filter if not 'all'
+                if ($month !== 'all') {
+                    $query->where('month', $month);
+                }
+                
+                $count = $query->where('kec', 'like', '%' . $kecamatan . '%')
                     ->count();
 
                 $results[$kecamatan] = $count;
@@ -49,6 +57,9 @@ class GetDataGiziController extends Controller
     public function getAllCountGiziForDesa(Request $request)
     {
         $params = $request->query('params');
+        $year = $request->query('year', date('Y')); // Default to current year
+        $month = $request->query('month', 'all'); // Default to 'all'
+        $category = $request->query('category', 1); // Default to Stunting (type_id = 1)
         
         // Validate the parameter
         if (empty($params)) {
@@ -64,10 +75,15 @@ class GetDataGiziController extends Controller
             $results = [];
             
             foreach ($desa as $item) {
-                $count = StatusGizi::where('type_id', 1)
-                    ->where('month', '4')
-                    ->where('year', '2025')
-                    ->where('desa_kel', 'like', '%' . $item . '%')
+                $query = StatusGizi::where('type_id', $category)
+                    ->where('year', $year);
+                
+                // Apply month filter if not 'all'
+                if ($month !== 'all') {
+                    $query->where('month', $month);
+                }
+                
+                $count = $query->where('desa_kel', 'like', '%' . $item . '%')
                     ->count();
 
                 $results[$item] = $count;
