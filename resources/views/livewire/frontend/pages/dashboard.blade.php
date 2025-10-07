@@ -58,28 +58,53 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
                 <!-- Left Column: Stats and Charts -->
                 <div class="flex flex-col gap-4 h-full">
-                    <!-- Stats Overview -->
+                    <!-- Stats Overview - Rearranged order -->
                     <div class="grid grid-cols-4 gap-1">
                         @php
                             $totalChildren = array_sum(array_column($chartDataGizi, 'total'));
                             $categories = count($chartDataGizi);
                             $months = count(array_unique(array_merge(...array_map(function($item) { return array_keys($item['dataPerMonth']); }, $chartDataGizi))));
                             $posyanduCount = count($posyandus);
+                            
+                            // Get the first category data for initial display
+                            $firstCategory = $chartDataGizi[0] ?? null;
+                            $initialTotal = 0;
+                            $initialCategoryName = '';
+                            
+                            if ($firstCategory) {
+                                $initialCategoryName = $firstCategory['type'];
+                                if ($filterMonth !== 'all') {
+                                    $initialTotal = $firstCategory['dataPerMonth'][$filterMonth] ?? 0;
+                                } else {
+                                    $initialTotal = $firstCategory['total'];
+                                }
+                            }
+                            
+                            // Get month name for display
+                            $bulanLabels = [
+                                1 => 'Januari',
+                                2 => 'Februari',
+                                3 => 'Maret',
+                                4 => 'April',
+                                5 => 'Mei',
+                                6 => 'Juni',
+                                7 => 'Juli',
+                                8 => 'Agustus',
+                                9 => 'September',
+                                10 => 'Oktober',
+                                11 => 'November',
+                                12 => 'Desember'
+                            ];
+                            
+                            $selectedMonthName = '';
+                            if ($filterMonth === 'all') {
+                                $selectedMonthName = 'Semua Bulan';
+                            } else {
+                                $selectedMonthName = $bulanLabels[$filterMonth] ?? 'Bulan ' . $filterMonth;
+                            }
                         @endphp
                         
-                        <div class="bg-gray-800 rounded-xl shadow-lg p-1.5 border border-gray-700">
-                            <div class="flex items-center">
-                                <div class="p-0.5 rounded-md bg-blue-900 mr-1">
-                                    <i class="fas fa-child text-blue-400 text-[9px]"></i>
-                                </div>
-                                <div>
-                                    <p class="text-gray-400 text-[8px]">Total Anak</p>
-                                    <p class="text-[9px] font-bold text-white" id="total-children-count">{{ number_format($totalChildren) }}</p>
-                                    <p class="text-[7px] text-gray-500 mt-0.5" id="total-children-detail">Semua Kategori</p>
-                                </div>
-                            </div>
-                        </div>
-                        
+                        <!-- Kategori Card - Show first category by default -->
                         <div class="bg-gray-800 rounded-xl shadow-lg p-1.5 border border-gray-700">
                             <div class="flex items-center">
                                 <div class="p-0.5 rounded-md bg-green-900 mr-1">
@@ -87,11 +112,26 @@
                                 </div>
                                 <div>
                                     <p class="text-gray-400 text-[8px]">Kategori</p>
-                                    <p class="text-[9px] font-bold text-white">{{ $categories }}</p>
+                                    <p class="text-[9px] font-bold text-white" id="category-name">{{ $initialCategoryName }}</p>
                                 </div>
                             </div>
                         </div>
                         
+                        <!-- Total Anak Card - Show first category by default -->
+                        <div class="bg-gray-800 rounded-xl shadow-lg p-1.5 border border-gray-700">
+                            <div class="flex items-center">
+                                <div class="p-0.5 rounded-md bg-blue-900 mr-1">
+                                    <i class="fas fa-child text-blue-400 text-[9px]"></i>
+                                </div>
+                                <div>
+                                    <p class="text-gray-400 text-[8px]">Total Anak</p>
+                                    <p class="text-[9px] font-bold text-white" id="total-children-count">{{ number_format($initialTotal) }}</p>
+                                    <p class="text-[7px] text-gray-500 mt-0.5" id="total-children-detail">{{ $initialCategoryName }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bulan Card - Show selected month name -->
                         <div class="bg-gray-800 rounded-xl shadow-lg p-1.5 border border-gray-700">
                             <div class="flex items-center">
                                 <div class="p-0.5 rounded-md bg-purple-900 mr-1">
@@ -99,11 +139,12 @@
                                 </div>
                                 <div>
                                     <p class="text-gray-400 text-[8px]">Bulan</p>
-                                    <p class="text-[9px] font-bold text-white">{{ $months }}</p>
+                                    <p class="text-[9px] font-bold text-white" id="bulan-name">{{ $selectedMonthName }}</p>
                                 </div>
                             </div>
                         </div>
                         
+                        <!-- Posyandu Card -->
                         <div class="bg-gray-800 rounded-xl shadow-lg p-1.5 border border-gray-700">
                             <div class="flex items-center">
                                 <div class="p-0.5 rounded-md bg-amber-900 mr-1">
@@ -122,15 +163,12 @@
                         <div class="flex items-center justify-between mb-1">
                             <h2 class="font-bold text-white text-[10px]">Distribusi Status Gizi</h2>
                             <div class="flex space-x-1">
-                                <button id="toggle-auto-slide" class="p-1 rounded-lg bg-gray-700 hover:bg-gray-600">
-                                    <i class="fas fa-play text-gray-300 text-[9px]"></i>
-                                </button>
-                                <button class="p-1 rounded-lg bg-gray-700 hover:bg-gray-600">
+                                <button class="p-1 rounded-lg bg-gray-700 hover:bg-gray-600 expand-chart-btn" data-chart="bar">
                                     <i class="fas fa-expand-alt text-gray-300 text-[9px]"></i>
                                 </button>
                             </div>
                         </div>
-                        <div id="current-category" class="text-center text-[9px] font-medium text-gray-400 mb-1 hidden"></div>
+                        <div id="current-category" class="text-center text-[9px] font-medium text-gray-400 mb-1"></div>
                         <div id="bar-perbulan-chart" class="apex-charts flex-grow" style="min-height: 150px;"></div>
                     </div>
 
@@ -138,15 +176,12 @@
                         <div class="flex items-center justify-between mb-1">
                             <h2 class="font-bold text-white text-[10px]">Tren Perkembangan Gizi</h2>
                             <div class="flex space-x-1">
-                                <button id="toggle-auto-slide-2" class="p-1 rounded-lg bg-gray-700 hover:bg-gray-600">
-                                    <i class="fas fa-play text-gray-300 text-[9px]"></i>
-                                </button>
-                                <button class="p-1 rounded-lg bg-gray-700 hover:bg-gray-600">
+                                <button class="p-1 rounded-lg bg-gray-700 hover:bg-gray-600 expand-chart-btn" data-chart="line">
                                     <i class="fas fa-expand-alt text-gray-300 text-[9px]"></i>
                                 </button>
                             </div>
                         </div>
-                        <div id="current-category-2" class="text-center text-[9px] font-medium text-gray-400 mb-1 hidden"></div>
+                        <div id="current-category-2" class="text-center text-[9px] font-medium text-gray-400 mb-1"></div>
                         <div id="line-perbulan-chart" class="apex-charts flex-grow" style="min-height: 150px;"></div>
                     </div>
                 </div>
@@ -155,7 +190,7 @@
                 <div class="bg-gray-800 rounded-2xl shadow-lg p-2 border border-gray-700 flex flex-col h-full lg:col-span-2">
                     <div class="flex items-center justify-between mb-1">
                         <h2 class="font-bold text-white text-[10px]">Peta Sebaran Status Gizi</h2>
-                        <button class="p-1 rounded-lg bg-gray-700 hover:bg-gray-600">
+                        <button class="p-1 rounded-lg bg-gray-700 hover:bg-gray-600 expand-map-btn">
                             <i class="fas fa-expand-alt text-gray-300 text-[9px]"></i>
                         </button>
                     </div>
@@ -171,9 +206,18 @@
     </div>
 </div>
 
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</div>
+
 @push('styles')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
     <style>
         #map {
             border-radius: 0.5rem;
@@ -447,9 +491,11 @@
         let autoSlideInterval = null;
         let isAutoSliding = false;
         
-        // Variables for total children sliding functionality
+        // Variables for total children and category sliding functionality
         let totalChildrenSlideInterval = null;
         let currentTotalChildrenIndex = 0;
+        let categorySlideInterval = null;
+        let currentCategorySlideIndex = 0;
 
         // Function to initialize charts
         function initializeCharts() {
@@ -477,7 +523,42 @@
             setTimeout(() => {
                 startAutoSlide();
                 startTotalChildrenSlide();
+                startCategorySlide(); // Start category sliding
             }, 3000);
+        }
+        
+        // Function to start category sliding
+        function startCategorySlide() {
+            // Clean up any existing intervals
+            if (categorySlideInterval) {
+                clearInterval(categorySlideInterval);
+            }
+            
+            currentCategorySlideIndex = 0;
+            
+            // Start new interval
+            categorySlideInterval = setInterval(() => {
+                slideCategory();
+            }, 5000); // Change every 5 seconds
+            
+            // Show first category immediately
+            slideCategory();
+        }
+
+        // Function to slide category display
+        function slideCategory() {
+            if (dataGizi.length === 0) return;
+            
+            // Update index - only cycle through individual categories, not "Semua Kategori"
+            currentCategorySlideIndex = (currentCategorySlideIndex + 1) % dataGizi.length;
+            
+            const categoryNameElement = document.getElementById('category-name');
+            
+            // Show specific category name only (without "Semua Kategori" option)
+            const category = dataGizi[currentCategorySlideIndex];
+            
+            // Show only the category name
+            categoryNameElement.textContent = category.type;
         }
         
         // Function to start total children sliding
@@ -676,10 +757,10 @@
             isPaused = false;
             currentCategoryIndex = 0;
             
-            // Start new interval
+            // Start new interval - changed to 5 seconds to match card sliding
             autoSlideInterval = setInterval(() => {
                 slideToNextCategory();
-            }, 8000); // Change category every 8 seconds
+            }, 5000); // Change category every 5 seconds
             
             // Show first category immediately
             slideToNextCategory();
@@ -689,8 +770,9 @@
         function slideToNextCategory() {
             if (dataGizi.length === 0) return;
             
-            // Update index
+            // Update index - only cycle through individual categories, not "Semua Kategori"
             currentCategoryIndex = (currentCategoryIndex + 1) % dataGizi.length;
+            
             const category = dataGizi[currentCategoryIndex];
             
             // Update bar chart with single category
@@ -773,30 +855,30 @@
             });
         }
         
-        // Function to slide total children count
+        // Function to slide total children count based on selected month and category
         function slideTotalChildren() {
             if (dataGizi.length === 0) return;
             
-            // Update index
-            currentTotalChildrenIndex = (currentTotalChildrenIndex + 1) % (dataGizi.length + 1);
+            // Update index - only cycle through individual categories, not "Semua Kategori"
+            currentTotalChildrenIndex = (currentTotalChildrenIndex + 1) % dataGizi.length;
             
             const totalCountElement = document.getElementById('total-children-count');
             const detailElement = document.getElementById('total-children-detail');
             
-            if (currentTotalChildrenIndex === 0) {
-                // Show total for all categories
-                const totalChildren = array_sum(array_column(dataGizi, 'total'));
-                totalCountElement.textContent = number_format(totalChildren);
-                detailElement.textContent = 'Semua Kategori';
-            } else {
-                // Show total for specific category
-                const categoryIndex = currentTotalChildrenIndex - 1;
-                const category = dataGizi[categoryIndex];
-                const categoryTotal = category.total;
-                
-                totalCountElement.textContent = number_format(categoryTotal);
-                detailElement.textContent = category.type;
+            // Show total for specific category only (no "Semua Kategori" option)
+            const category = dataGizi[currentTotalChildrenIndex];
+            
+            // Get the selected month from the filter
+            const selectedMonth = document.getElementById('month-selector').value;
+            let categoryTotal = category.total;
+            
+            // If a specific month is selected, show the count for that month only
+            if (selectedMonth !== 'all') {
+                categoryTotal = category.dataPerMonth[selectedMonth] || 0;
             }
+            
+            totalCountElement.textContent = number_format(categoryTotal);
+            detailElement.textContent = category.type;
         }
         
         // Helper functions for number formatting
@@ -844,10 +926,29 @@
                 totalChildrenSlideInterval = null;
             }
             
-            // Reset total children display to show all categories
-            const totalChildren = array_sum(array_column(dataGizi, 'total'));
-            document.getElementById('total-children-count').textContent = number_format(totalChildren);
-            document.getElementById('total-children-detail').textContent = 'Semua Kategori';
+            // Stop category sliding
+            if (categorySlideInterval) {
+                clearInterval(categorySlideInterval);
+                categorySlideInterval = null;
+            }
+            
+            // Reset total children display to show first category
+            if (dataGizi.length > 0) {
+                const firstCategory = dataGizi[0];
+                const selectedMonth = document.getElementById('month-selector').value;
+                let firstCategoryTotal = firstCategory.total;
+                
+                // If a specific month is selected, show the count for that month only
+                if (selectedMonth !== 'all') {
+                    firstCategoryTotal = firstCategory.dataPerMonth[selectedMonth] || 0;
+                }
+                
+                document.getElementById('total-children-count').textContent = number_format(firstCategoryTotal);
+                document.getElementById('total-children-detail').textContent = firstCategory.type;
+                
+                // Reset category display to show first category name only
+                document.getElementById('category-name').textContent = firstCategory.type;
+            }
             
             // Hide category indicators
             const categoryElements = document.querySelectorAll('#current-category, #current-category-2');
@@ -892,6 +993,27 @@
             
             document.getElementById('toggle-auto-slide-2').addEventListener('click', function() {
                 toggleAutoSlide();
+            });
+            
+            // Add event listeners to update total children when month selector changes
+            document.getElementById('month-selector').addEventListener('change', function() {
+                // Restart the total children sliding with the new month selection
+                if (totalChildrenSlideInterval) {
+                    clearInterval(totalChildrenSlideInterval);
+                }
+                startTotalChildrenSlide();
+                
+                // Update the bulan card with the selected month name
+                updateBulanCard();
+            });
+            
+            // Add event listeners to update total children when year selector changes
+            document.getElementById('year-selector').addEventListener('change', function() {
+                // Restart the total children sliding with the new year selection
+                if (totalChildrenSlideInterval) {
+                    clearInterval(totalChildrenSlideInterval);
+                }
+                startTotalChildrenSlide();
             });
             
             // Add hover events to pause/resume auto-slide
@@ -952,7 +1074,7 @@
             
             pauseTimeout = setTimeout(() => {
                 if (isAutoSliding && !isPaused) {
-                    // Reduced from 8 seconds to 5 seconds
+                    // Changed to 5 seconds to match card sliding
                     autoSlideInterval = setInterval(() => {
                         slideToNextCategory();
                     }, 5000);
@@ -970,6 +1092,11 @@
             if (totalChildrenSlideInterval) {
                 clearInterval(totalChildrenSlideInterval);
                 totalChildrenSlideInterval = null;
+            }
+            
+            if (categorySlideInterval) {
+                clearInterval(categorySlideInterval);
+                categorySlideInterval = null;
             }
             
             if (pauseTimeout) {
@@ -1682,7 +1809,7 @@
             mapInitialized = true;
         }
 
-        // Initialize map when DOM is loaded
+        // Initialize charts when DOM is loaded
         document.addEventListener("DOMContentLoaded", function() {
             // Set the selected values when the page loads based on URL parameters
             const urlParams = new URLSearchParams(window.location.search);
@@ -1708,13 +1835,38 @@
             // Initialize map
             setTimeout(initializeMap, 1500);
             
-            // Add event listeners for auto-slide toggle buttons
-            document.getElementById('toggle-auto-slide').addEventListener('click', function() {
-                toggleAutoSlide();
+            // Add event listeners for chart expand buttons
+            document.querySelectorAll('.expand-chart-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const chartType = this.getAttribute('data-chart');
+                    expandChart(chartType);
+                });
             });
             
-            document.getElementById('toggle-auto-slide-2').addEventListener('click', function() {
-                toggleAutoSlide();
+            // Add event listener for map expand button
+            document.querySelector('.expand-map-btn').addEventListener('click', function() {
+                expandMap();
+            });
+            
+            // Add event listeners to update total children when month selector changes
+            document.getElementById('month-selector').addEventListener('change', function() {
+                // Restart the total children sliding with the new month selection
+                if (totalChildrenSlideInterval) {
+                    clearInterval(totalChildrenSlideInterval);
+                }
+                startTotalChildrenSlide();
+                
+                // Update the bulan card with the selected month name
+                updateBulanCard();
+            });
+            
+            // Add event listeners to update total children when year selector changes
+            document.getElementById('year-selector').addEventListener('change', function() {
+                // Restart the total children sliding with the new year selection
+                if (totalChildrenSlideInterval) {
+                    clearInterval(totalChildrenSlideInterval);
+                }
+                startTotalChildrenSlide();
             });
             
             // Add hover events to pause/resume auto-slide
@@ -1748,14 +1900,288 @@
             }
         });
         
-        // Remove Livewire event listeners since we're not using Livewire for filtering anymore
-        // These listeners are no longer needed
+        // Function to update the bulan card with the selected month name
+        function updateBulanCard() {
+            const monthSelector = document.getElementById('month-selector');
+            const selectedMonth = monthSelector.value;
+            const bulanNameElement = document.getElementById('bulan-name');
+            
+            // Month labels mapping
+            const bulanLabels = {
+                '1': 'Januari',
+                '2': 'Februari',
+                '3': 'Maret',
+                '4': 'April',
+                '5': 'Mei',
+                '6': 'Juni',
+                '7': 'Juli',
+                '8': 'Agustus',
+                '9': 'September',
+                '10': 'Oktober',
+                '11': 'November',
+                '12': 'Desember'
+            };
+            
+            if (selectedMonth === 'all') {
+                bulanNameElement.textContent = 'Semua Bulan';
+            } else {
+                bulanNameElement.textContent = bulanLabels[selectedMonth] || 'Bulan ' + selectedMonth;
+            }
+        }
         
-        // Also listen for the updated event
-        document.addEventListener('livewire:updated', function () {
-            // Reinitialize map after Livewire update
-            setTimeout(initializeMap, 500);
-        });
+        // Function to expand chart in a modal
+        function expandChart(chartType) {
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            `;
+            
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: #1f2937;
+                border-radius: 0.75rem;
+                padding: 1.5rem;
+                width: 95%;
+                height: 95%;
+                position: relative;
+                border: 2px solid #4b5563;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            `;
+            
+            // Create close button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            closeBtn.style.cssText = `
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                background: #374151;
+                border: none;
+                color: white;
+                padding: 0.75rem;
+                border-radius: 0.5rem;
+                cursor: pointer;
+                z-index: 10001;
+                font-size: 1.25rem;
+                transition: all 0.2s;
+            `;
+            
+            closeBtn.onmouseenter = function() {
+                this.style.background = '#4b5563';
+                this.style.transform = 'scale(1.1)';
+            };
+            
+            closeBtn.onmouseleave = function() {
+                this.style.background = '#374151';
+                this.style.transform = 'scale(1)';
+            };
+            
+            closeBtn.onclick = function() {
+                document.body.removeChild(modal);
+            };
+            
+            // Create chart container
+            const chartContainer = document.createElement('div');
+            chartContainer.style.cssText = `
+                width: 100%;
+                height: calc(100% - 3rem);
+                margin-top: 3rem;
+            `;
+            
+            // Clone the selected chart
+            const originalChart = document.getElementById(chartType + '-perbulan-chart');
+            
+            // Add title
+            const title = document.createElement('h2');
+            title.textContent = chartType === 'bar' ? 'Distribusi Status Gizi' : 'Tren Perkembangan Gizi';
+            title.style.cssText = `
+                color: white;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-weight: bold;
+                font-size: 1.5rem;
+                position: absolute;
+                top: 1.5rem;
+                left: 0;
+                right: 0;
+            `;
+            
+            // Add category indicator
+            const categoryIndicator = document.createElement('div');
+            categoryIndicator.id = 'expanded-category-indicator';
+            categoryIndicator.style.cssText = `
+                text-align: center;
+                margin-bottom: 1rem;
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: #93c5fd;
+                height: 1.5rem;
+            `;
+            
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(title);
+            modalContent.appendChild(categoryIndicator);
+            modalContent.appendChild(chartContainer);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            
+            // Clone and resize the chart
+            setTimeout(function() {
+                // Get current chart instance
+                const chartInstance = chartType === 'bar' ? barChartInstance : lineChartInstance;
+                
+                // Get current category
+                const currentCategory = dataGizi[currentCategoryIndex];
+                
+                // Update category indicator
+                categoryIndicator.textContent = currentCategory.type;
+                
+                // Create new chart options with larger size
+                const chartOptions = chartInstance.opts;
+                chartOptions.chart = {
+                    type: chartType === 'bar' ? 'bar' : 'line',
+                    height: '100%',
+                    toolbar: {
+                        show: true,
+                        tools: {
+                            download: true,
+                            selection: false,
+                            zoom: true,
+                            zoomin: true,
+                            zoomout: true,
+                            pan: true,
+                            reset: true
+                        }
+                    }
+                };
+                
+                // Create new chart in the modal
+                const expandedChart = new ApexCharts(chartContainer, chartOptions);
+                expandedChart.render();
+            }, 100);
+        }
         
+        // Function to expand map in a modal
+        function expandMap() {
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            `;
+            
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: #1f2937;
+                border-radius: 0.75rem;
+                padding: 1.5rem;
+                width: 95%;
+                height: 95%;
+                position: relative;
+                border: 2px solid #4b5563;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            `;
+            
+            // Create close button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            closeBtn.style.cssText = `
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                background: #374151;
+                border: none;
+                color: white;
+                padding: 0.75rem;
+                border-radius: 0.5rem;
+                cursor: pointer;
+                z-index: 10001;
+                font-size: 1.25rem;
+                transition: all 0.2s;
+            `;
+            
+            closeBtn.onmouseenter = function() {
+                this.style.background = '#4b5563';
+                this.style.transform = 'scale(1.1)';
+            };
+            
+            closeBtn.onmouseleave = function() {
+                this.style.background = '#374151';
+                this.style.transform = 'scale(1)';
+            };
+            
+            closeBtn.onclick = function() {
+                document.body.removeChild(modal);
+            };
+            
+            // Create map container
+            const mapContainer = document.createElement('div');
+            mapContainer.style.cssText = `
+                width: 100%;
+                height: calc(100% - 3rem);
+                margin-top: 3rem;
+                border-radius: 0.5rem;
+            `;
+            
+            // Add title
+            const title = document.createElement('h2');
+            title.textContent = 'Peta Sebaran Status Gizi';
+            title.style.cssText = `
+                color: white;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-weight: bold;
+                font-size: 1.5rem;
+                position: absolute;
+                top: 1.5rem;
+                left: 0;
+                right: 0;
+            `;
+            
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(title);
+            modalContent.appendChild(mapContainer);
+            modal.appendChild(modalContent);
+            
+            // Add the map to the modal
+            document.body.appendChild(modal);
+            
+            // Initialize a new map in the modal
+            setTimeout(function() {
+                const newMap = L.map(mapContainer).setView([-8.357307747936277, 116.2580360327694], 11);
+                
+                // Add tiles
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 19
+                }).addTo(newMap);
+                
+                // Reuse the existing map data
+                // Note: In a real implementation, you would clone the map data properly
+                // This is a simplified version for demonstration
+            }, 100);
+        }
+
     </script>
 @endpush
